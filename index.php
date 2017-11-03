@@ -23,7 +23,10 @@ if (isset($_GET['code'])) {
 
     $gmail = new Google_Service_Gmail($client);
 
-    $list = $gmail->users_messages->listUsersMessages('me', ['maxResults' => 10]);
+    $list = $gmail->users_messages->listUsersMessages('me');
+//    $mess = $gmail->users_messages->get('me', '15f7fa45c5457663', ['format' => 'full']);
+//    print_r($mess->getLabelIds());
+//    die();
     try {
         while ($list->getMessages() != null) {
 
@@ -36,6 +39,7 @@ if (isset($_GET['code'])) {
                 $parts = $payload->getParts();
                 $body = $payload->getBody();
                 $headers = $payload->getHeaders();
+                $labels = json_encode($single_message->getLabelIds());
                 $FOUND_BODY = FALSE;
                 if (!$FOUND_BODY) {
                     foreach ($parts as $part) {
@@ -161,13 +165,13 @@ if (isset($_GET['code'])) {
 
                 $subject = getHeader($headers, 'Subject');
                 $headersObject = json_encode($headerObject);
-                $conn->query("INSERT INTO gmail(subject, raw_body, headers)  
-                  VALUES ('$subject', '$FOUND_BODY', '$headersObject')");
+                $conn->query("INSERT INTO gmail(mess_id, labels, subject, raw_body, headers)  
+                  VALUES ('$message_id','$labels','$subject', '$FOUND_BODY', '$headersObject')");
             }
 
             if ($list->getNextPageToken() != null) {
                 $pageToken = $list->getNextPageToken();
-                $list = $gmail->users_messages->listUsersMessages('me', ['pageToken' => $pageToken, 'maxResults' => 1000]);
+                $list = $gmail->users_messages->listUsersMessages('me', ['pageToken' => $pageToken]);
             } else {
                 break;
             }
